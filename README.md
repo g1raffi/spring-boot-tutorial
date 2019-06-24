@@ -75,16 +75,17 @@ We will create a simple data model for our daemons which looks like this:
 
 /model/Daemon.java
 ```java
-
 package ch.puzzle.serviceApi.daemon.model;
 
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
 @Entity
 public class Daemon {
 
     @Id
+    @GeneratedValue
     private Long id;
     private String name;
     private int port;
@@ -92,8 +93,7 @@ public class Daemon {
 
     public Daemon() { }
 
-    public Daemon(Long id, String name, int port, String description) {
-        this.id = id;
+    public Daemon(String name, int port, String description) {
         this.name = name;
         this.port = port;
         this.description = description;
@@ -133,7 +133,7 @@ public class Daemon {
 }
 ```
 
-We annotate the daemon class with `@Entity` to enable JPA and Hibernate to work their magic and create mappings and tables for the class. But except for the annotation there is nothing special happening here. 
+We annotate the daemon class with `@Entity` to enable JPA and Hibernate to work their magic and create mappings and tables for the class. But except for the annotation there is nothing special happening here. With the `@Id` annotation we indicate that the `id:Long` will be used as primary key and with `@GeneratedValue` we indicate that it will be automatically generated and incremented.
 
 Let's create our first service and repository to access the entity. 
 
@@ -238,12 +238,13 @@ public class DaemonController {
 
     @GetMapping
     public List<Daemon> getAllDaemons() {
-        Daemon daemon = new Daemon(1L, "TestDaemon", 8081, "A test daemon running on port 8081");
+        Daemon daemon = new Daemon("TestDaemon", 8081, "A test daemon running on port 8081");
         daemonService.saveDaemon(daemon);
 
         return daemonService.getAllDaemons();
     }
 }
+
 ```
 
 /service/DaemonService.java
@@ -287,4 +288,6 @@ If you start the application again and repeat the last HTTP request you will get
     }
 ]
 ``` 
+
+If you repeat the request a second, third ... time you will notice that the controller creates a new daemon saved to the database for each request. 
 
