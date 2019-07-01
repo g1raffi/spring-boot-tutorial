@@ -36,6 +36,70 @@ The spring framework provides us with a lot of convenient features, the first fe
 
 ## Our first endpoint
 
+First we will create a simple REST endpoint with help of the spring framework which just returns a simple 'Hello World' to the user.
+
+Let's create our first Rest-Controller class. 
+
+```bash
+
+$ touch src/main/java/ch/puzzle/serviceApi/HelloController.java
+
+``` 
+
+And change it's content as shown below: 
+
+HelloController.java
+```java
+package ch.puzzle.serviceApi;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/hello")
+public class HelloController {
+
+    @GetMapping
+    public String helloWorld() {
+        return "Hello World";
+    }
+}
+``` 
+
+So what is actually happening here? We are in fact registering a rest-controller in our application which we can call on the endpoint `/hello` of our application. This endpoint serves one HTTP-Method which we can use with a GET request on the controller's basepath `/hello`. 
+So if we start the application again with `$ ./gradlew bootRun` and then send an HTTP GET request to `localhost:8080/hello` we will receive the string "Hello World" as response. 
+
+Let's try to go a bit further and use a parameter on a new GET mapping in this controller. We can create another function `helloUser(@PathVariable String username)` which should greet the user with his username passed as a path variable.
+
+```java
+package ch.puzzle.serviceApi;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/hello")
+public class HelloController {
+
+    @GetMapping
+    public String helloWorld() {
+        return "Hello World";
+    }
+
+    @GetMapping("/{username}")
+    public String helloUser(@PathVariable String username) {
+        return "Hello " + username;
+    }
+}
+```
+
+If we send an HTTP GET request now to `localhost:8080/hello/TestUser` we will receive the response "Hello TestUser"!
+
+## And now with actual data
+
 To demonstrate the full stack we do first need a usecase. We will have in our application a table full of services, called daemons, available in our network which will be represented by the model and class `Daemon.java`. The `DaemonRepository` will be the repository to access the data and will be accessed by the `DaemonService` which will be exposed by the `DaemonController` as a REST-endpoint (e.g. `HTTP-GET: /api/daemon`). 
 
 Were going to create the conventional folder structure first. 
@@ -290,4 +354,57 @@ If you start the application again and repeat the last HTTP request you will get
 ``` 
 
 If you repeat the request a second, third ... time you will notice that the controller creates a new daemon saved to the database for each request. 
+
+## To the cloud
+
+In the last few years all the application migrated from VM's to containers. From barebone metal servers into the infamous cloud. I hope you are familiar with the idea of containers and docker. If not, please familiarize yourself with docker a little bit first. 
+Tutorials and Readings here: 
+  - https://docs.docker.com/get-started/
+  - https://docker-curriculum.com/ (read until Docker AWS chapter)
+
+What we want to achieve is to build our application, pack it in a container and run it within the container.
+To get our application into a container we first need to tell docker how to build our image for this application. So we create and write a Dockerfile:
+
+```bash
+
+$ touch Dockerfile
+```
+
+```docker
+FROM adoptopenjdk/openjdk11:alpine
+
+USER 1001
+
+CMD ./gradlew clean build;
+
+COPY /build/libs/serviceApi-0.0.1-SNAPSHOT.jar app.jar
+
+EXPOSE 8080:8080
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+We tell docker we want the openjdk11:alpine image from adoptopenjdk as our baseimage. Then we use a created user 1001 to execute our build with `./gradlew clean build` and copy our builded jar `serviceApi-0.0.1-SNAPSHOT.jar` into the image. We tell docker that we want to expose the internal port 8080 to our hosts system port 8080 and start the container with `java -jar app.jar`. That's all the magic needed to make our little application ready for the cloud. 
+Simple build the docker image the following command in the project's base folder: 
+
+```bash
+
+$ docker build .
+```
+
+Which will return you a little hash of the image we just created. For example: 
+
+``` 
+---> 46b513a9e294
+Successfully built 46b513a9e294
+```
+
+Afterwards we can start the container with 
+
+```bash
+
+$docker run 46b513a9e294
+```
+
+and you can hit the api again!
 
