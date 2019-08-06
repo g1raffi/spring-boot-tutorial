@@ -403,7 +403,7 @@ Afterwards we can start the container with
 
 ```bash
 
-$docker run 46b513a9e294
+$docker run -p 8080:8080 46b513a9e294
 ```
 
 and you can hit the api again!
