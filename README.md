@@ -375,8 +375,6 @@ FROM adoptopenjdk/openjdk11:alpine
 
 USER 1001
 
-CMD ./gradlew clean build;
-
 COPY /build/libs/serviceApi-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080:8080
